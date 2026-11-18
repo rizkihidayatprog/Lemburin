@@ -1,4 +1,4 @@
-import { Clock3, X, LayoutDashboard, PenSquare, Table2, FileBarChart2, Archive, Database, HardDrive, Pencil, UserRound } from 'lucide-react'
+import { Clock3, X, LayoutDashboard, PenSquare, Table2, FileBarChart2, Archive, Database, HardDrive, Pencil, UserRound, Mail, LogOut } from 'lucide-react'
 import { getInitials } from '../services/profileService'
 
 const NAV = [
@@ -9,7 +9,7 @@ const NAV = [
   { href: '#riwayat', label: 'Riwayat ACC', icon: Archive },
 ]
 
-export default function Sidebar({ open, onClose, usingFirebase, profile, onEditProfile }) {
+export default function Sidebar({ open, onClose, usingFirebase, profile, onEditProfile, userEmail, onSignOut }) {
   return (
     <>
       {/* Overlay mobile */}
@@ -79,8 +79,23 @@ export default function Sidebar({ open, onClose, usingFirebase, profile, onEditP
           </div>
         </nav>
 
-        {/* Footer: profil pengguna */}
+        {/* Footer: akun + profil pengguna */}
         <div className="border-t border-brand-600/15 px-4 py-3">
+          {userEmail && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-brand-600/15 bg-brand-50 px-2.5 py-1.5">
+              <Mail size={13} className="shrink-0 text-brand-800/50" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-[10px] font-semibold text-brand-800/70" title={userEmail}>{userEmail}</span>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="shrink-0 rounded-md p-1.5 text-brand-800/50 transition hover:bg-white hover:text-indonesia"
+                aria-label="Keluar"
+                title="Keluar"
+              >
+                <LogOut size={13} aria-hidden="true" />
+              </button>
+            </div>
+          )}
           {profile?.nama ? (
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indonesia text-[11px] font-bold text-gold-400">

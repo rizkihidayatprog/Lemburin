@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Trash2, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox, FileSpreadsheet, FileText, Loader2, Lock } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import { OVERTIME_TYPE_LABELS } from '../lib/calculateFee'
+import { typeInfo } from '../lib/overtimeTypeInfo'
 import { formatRupiah } from '../utils/currencyUtils'
 import { formatIndonesianDate, formatTimeDots } from '../utils/dateUtils'
 
@@ -15,7 +16,7 @@ export default function OvertimeTable({
   onExportPDF,
   exporting,
 }) {
-  const [sortDesc, setSortDesc] = useState(true)
+  const [sortDesc, setSortDesc] = useState(false) // default: tanggal terlama → terbaru
   const [page, setPage] = useState(1)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -98,7 +99,7 @@ export default function OvertimeTable({
                     <span className="line-clamp-2">{row.description}</span>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="chip">{OVERTIME_TYPE_LABELS[row.overtimeType] || row.overtimeType}</span>
+                    <span className="chip" title={typeInfo(row.overtimeType)?.desc}>{OVERTIME_TYPE_LABELS[row.overtimeType] || row.overtimeType}</span>
                     {isAcc && (
                       <span className="chip ml-1 !border-gold-600/50 !bg-gold-300/40 !text-gold-700"><Lock size={10} className="mr-1 inline" aria-hidden="true" />ACC</span>
                     )}

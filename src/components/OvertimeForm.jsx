@@ -10,6 +10,7 @@ import {
 import { getDayType, addMinutesToTime, formatIndonesianDateLong } from '../utils/dateUtils'
 import { formatRupiah } from '../utils/currencyUtils'
 import DatePicker from './DatePicker'
+import { TYPE_INFO } from '../lib/overtimeTypeInfo'
 
 const EMPTY_FORM = {
   date: '',
@@ -304,6 +305,18 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
           </select>
           {errors.overtimeType && <p className="mt-1.5 text-xs text-indonesia">{errors.overtimeType}</p>}
           {morningHint && <p className="mt-1.5 text-[11px] text-brand-900/55">{morningHint}</p>}
+          <details className="mt-2 rounded-lg border border-brand-600/15 bg-brand-50 px-3 py-2">
+            <summary className="cursor-pointer text-[11px] font-semibold text-brand-800/80 transition hover:text-brand-950">
+              Keterangan setiap jenis lembur
+            </summary>
+            <ul className="mt-1.5 space-y-1 text-[10px] leading-snug text-brand-900/70">
+              {TYPE_INFO.map((t) => (
+                <li key={t.value}>
+                  <span className="font-bold text-brand-900">{t.label}</span> — {t.desc}
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
 
         {/* Keterangan */}

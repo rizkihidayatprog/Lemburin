@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatIndonesianDate, formatTimeDots, periodeFromRecords, getExportTimestamp } from '../utils/dateUtils'
 import { OVERTIME_TYPE_LABELS } from './calculateFee'
+import { TYPE_INFO } from './overtimeTypeInfo'
 import { formatRupiah } from '../utils/currencyUtils'
 
 /** Bangun dokumen PDF tanpa mengunduh — dipakai oleh modal pratinjau */
@@ -110,6 +111,28 @@ export function generateOvertimePDF(records, summary, profile) {
     styles: { fontSize: 8.5, cellPadding: 2.5 },
     headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: { 2: { halign: 'right' } },
+    theme: 'grid',
+    margin: { left: 14, right: 14 },
+  })
+
+  // Keterangan jenis lembur
+  y = doc.lastAutoTable.finalY + 8
+  if (y > 140) {
+    doc.addPage()
+    y = 18
+  }
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(74, 14, 10)
+  doc.text('KETERANGAN JENIS LEMBUR', 14, y)
+  y += 2
+  autoTable(doc, {
+    startY: y,
+    head: [['Jenis', 'Keterangan']],
+    body: TYPE_INFO.map((t) => [t.label, t.desc]),
+    styles: { fontSize: 8, cellPadding: 2.5 },
+    headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: { 0: { cellWidth: 42, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
     theme: 'grid',
     margin: { left: 14, right: 14 },
   })

@@ -1,13 +1,10 @@
 rules_version = '2';
 
-// Firestore Security Rules — Overtime Management (tanpa login)
+// Firestore Security Rules — Overtime Management (dengan login email/password)
 // ============================================================
-// PENTING: Aplikasi ini TIDAK memakai autentikasi. Siapa pun yang tahu
-// URL Firestore (projectId) berpotensi mengakses collection `overtime`.
-// Rules di bawah hanya memvalidasi BENTUK data. Untuk membatasi akses
-// secara nyata, aktifkan Firebase App Check (reCAPTCHA v3) di console,
-// lalu ubah rules menjadi: allow read, write: if request.appCheckOnly...
-// atau tambahkan autentikasi (mis. anonymous sign-in) bila diperlukan.
+// Aplikasi memakai Firebase Auth (email + password). Akun dibuat otomatis
+// saat email bertag 'justitia' login pertama kali, via Firebase Console, atau
+// oleh pemilik aplikasi. Tanpa login, tidak ada akses read/write sama sekali.
 // ============================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -41,9 +38,10 @@ service cloud.firestore {
           && (!('batchEnd' in d) || d.batchEnd is string);
       }
 
-      allow read: if true;
-      allow create, update: if isValidOvertime();
-      allow delete: if true;
+      // Hanya pengguna yang sudah login yang bisa baca/tulis/hapus
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && isValidOvertime();
+      allow delete: if request.auth != null;
     }
 
     // Collection lain ditolak secara default

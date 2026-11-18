@@ -2,6 +2,7 @@
 import ExcelJS from 'exceljs'
 import { formatIndonesianDate, formatTimeDots, periodeFromRecords, getExportTimestamp } from '../utils/dateUtils'
 import { OVERTIME_TYPE_LABELS } from './calculateFee'
+import { TYPE_INFO } from './overtimeTypeInfo'
 
 // ── Palet merah–putih–kuning ───────────────────────────────────────────
 const RED = 'CE1126'
@@ -198,6 +199,38 @@ export async function exportOvertimeExcel(records, summary, profile) {
       row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${CREAM_ROW}` } }
     }
     row.height = 19
+  })
+
+  // ── Keterangan jenis lembur ─────────────────────────────────────────
+  cursor = cursor + summary.byCategory.length + 2 // 1 baris kosong
+  ws.mergeCells(`A${cursor}:E${cursor}`)
+  const ketTitle = ws.getCell(`A${cursor}`)
+  ketTitle.value = 'KETERANGAN JENIS LEMBUR'
+  ketTitle.font = { size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
+  ketTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${RED}` } }
+  ketTitle.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+  ws.getRow(cursor).height = 22
+
+  TYPE_INFO.forEach((t, i) => {
+    const rowIndex = cursor + 1 + i
+    ws.mergeCells(`B${rowIndex}:E${rowIndex}`)
+    const row = ws.getRow(rowIndex)
+    row.getCell(1).value = t.label
+    row.getCell(2).value = t.desc
+    row.getCell(1).border = thinBorder()
+    row.getCell(2).border = thinBorder()
+    row.getCell(3).border = thinBorder()
+    row.getCell(4).border = thinBorder()
+    row.getCell(5).border = thinBorder()
+    row.getCell(1).font = { size: 9.5, bold: true, color: { argb: `FF${BRAND_950}` } }
+    row.getCell(1).alignment = { vertical: 'middle', wrapText: true }
+    row.getCell(2).font = { size: 9, color: { argb: `FF${BRAND_950}` } }
+    row.getCell(2).alignment = { vertical: 'middle', wrapText: true }
+    if (i % 2 === 1) {
+      row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${CREAM_ROW}` } }
+      row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${CREAM_ROW}` } }
+    }
+    row.height = 20
   })
 
   // ── Print setup: A4 Landscape ────────────────────────────────────────

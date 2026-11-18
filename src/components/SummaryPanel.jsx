@@ -1,7 +1,7 @@
 import { Stamp } from 'lucide-react'
 import { formatRupiah } from '../utils/currencyUtils'
 import { formatDecimalHours } from '../utils/dateUtils'
-import { FEE } from '../lib/calculateFee'
+import { TYPE_INFO } from '../lib/overtimeTypeInfo'
 
 // Panel rekap — lembur yang BELUM di-ACC (periode otomatis dari tanggal data)
 export default function SummaryPanel({ summary, periodeLabel, periodeRange, pendingCount, onRequestAcc, accLoading }) {
@@ -71,24 +71,14 @@ export default function SummaryPanel({ summary, periodeLabel, periodeRange, pend
 
 // Kartu kecil berisi aturan fee
 export function FeeRules() {
-  const rows = [
-    ['Pagi ≤ 06.00', formatRupiah(FEE.MORNING_MAX)],
-    ['Pagi 06.01–07.00', formatRupiah(FEE.MORNING_LATE)],
-    ['Malam', formatRupiah(FEE.NIGHT)],
-    ['Pagi + Malam', '20/30rb + 35rb'],
-    ['Overnight Weekday', formatRupiah(FEE.WEEKDAY_OVERNIGHT)],
-    ['Weekend < 4 jam', formatRupiah(FEE.WEEKEND_HALFDAY)],
-    ['Weekend ≥ 4 jam', formatRupiah(FEE.WEEKEND_FULLDAY)],
-    ['Overnight Weekend', formatRupiah(FEE.WEEKEND_OVERNIGHT)],
-  ]
   return (
     <section className="card p-4 sm:p-5" aria-label="Ketentuan fee">
-      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-brand-800/50">Ketentuan Fee</h3>
-      <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-2">
-        {rows.map(([label, value]) => (
-          <li key={label} className="flex items-center justify-between gap-2 border-b border-brand-600/10 py-1">
-            <span className="text-brand-900/65">{label}</span>
-            <span className="font-mono text-brand-950">{value}</span>
+      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-brand-800/50">Keterangan Jenis Lembur &amp; Fee</h3>
+      <ul className="mt-2 grid grid-cols-1 gap-1.5 text-[11px]">
+        {TYPE_INFO.map((t) => (
+          <li key={t.value} className="rounded-lg border border-brand-600/10 bg-brand-50/60 px-3 py-1.5 leading-snug">
+            <span className="font-bold text-brand-950">{t.label}</span>
+            <span className="text-brand-900/65"> — {t.desc}</span>
           </li>
         ))}
       </ul>

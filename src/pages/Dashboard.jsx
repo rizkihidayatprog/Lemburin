@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Menu, WifiOff, AlertCircle, Sparkles } from 'lucide-react'
+import { Menu, WifiOff, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import DashboardCards from '../components/DashboardCards'
 import OvertimeForm from '../components/OvertimeForm'
@@ -11,6 +11,8 @@ import ToastContainer from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProfileDialog from '../components/ProfileDialog'
 import PdfPreviewModal from '../components/PdfPreviewModal'
+import LoginScreen from '../components/LoginScreen'
+import { subscribeAuth, signOutUser, authEnabled } from '../services/authService'
 import { getProfile, saveProfile } from '../services/profileService'
 import {
   subscribeOvertime,
@@ -60,8 +62,13 @@ export default function Dashboard() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [pdfPreview, setPdfPreview] = useState(null) // { url, fileName, subtitle }
   const [toasts, setToasts] = useState([])
+  const [authState, setAuthState] = useState({ status: 'loading' })
   const toastId = useRef(0)
   const purgedRef = useRef(false)
+
+  const isLocal = authState.status === 'local'
+  const isAuthed = isLocal || authState.status === 'in'
+  const checkingAuth = authState.status === 'loading'
 
   const showToast = useCallback((message, type = 'success') => {
     toastId.current += 1
@@ -76,6 +83,12 @@ export default function Dashboard() {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  // Status autentikasi (subscribe sekali)
+  useEffect(() => {
+    const unsubscribe = subscribeAuth(setAuthState)
+    return () => unsubscribe?.()
+  }, [])
+
   // Status koneksi
   useEffect(() => {
     const goOnline = () => setOnline(true)
@@ -88,8 +101,10 @@ export default function Dashboard() {
     }
   }, [])
 
-  // Langganan data realtime (Firestore onSnapshot / fallback lokal)
+  // Langganan data realtime — hanya setelah login (atau mode lokal)
   useEffect(() => {
+    if (!isAuthed) return undefined
+    setLoading(true)
     const unsubscribe = subscribeOvertime(
       (rows) => {
         setOvertimes(rows)
@@ -102,18 +117,18 @@ export default function Dashboard() {
       },
     )
     return () => unsubscribe?.()
-  }, [])
+  }, [isAuthed])
 
   // Purge otomatis: data ACC lebih dari 3 bulan dihapus setelah aplikasi dibuka
   useEffect(() => {
-    if (loading || purgedRef.current) return
+    if (loading || !isAuthed || purgedRef.current) return
     purgedRef.current = true
     purgeAccOlderThanDays(92)
       .then((res) => {
         if (res?.deleted > 0) showToast(`${res.deleted} data ACC (>3 bulan) dihapus otomatis`, 'info')
       })
       .catch((error) => console.warn('Purge gagal:', error))
-  }, [loading, showToast])
+  }, [loading, isAuthed, showToast])
 
   // ── Rekap aktif = SEMUA data yang belum di-ACC ─────────────────────────
   const pending = useMemo(() => overtimes.filter((r) => !r.acc), [overtimes])
@@ -296,13 +311,46 @@ export default function Dashboard() {
     }
   }, [showToast])
 
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOutUser()
+    } catch (error) {
+      console.warn('Logout gagal:', error)
+    }
+  }, [])
+
+  // ── Early return: sedang cek status login ────────────────────────────
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-indonesia" size={32} aria-hidden="true" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-800/50">Memuat…</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Early return: belum login → layar masuk ───────────────────────────
+  if (!isAuthed) {
+    return <LoginScreen />
+  }
+
   const today = formatIndonesianDateLong(
     (() => { const n = new Date(); const p = (v) => String(v).padStart(2, '0'); return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}` })(),
   )
 
   return (
     <div className="min-h-screen">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} usingFirebase={usingFirebase} profile={profile} onEditProfile={() => setProfileOpen(true)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        usingFirebase={usingFirebase}
+        profile={profile}
+        onEditProfile={() => setProfileOpen(true)}
+        userEmail={authState.status === 'in' ? authState.user.email : null}
+        onSignOut={handleSignOut}
+      />
 
       {/* Konten utama */}
       <div className="lg:pl-[260px]">
