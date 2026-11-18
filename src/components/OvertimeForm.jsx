@@ -7,7 +7,7 @@ import {
   isOvernightType,
   FEE,
 } from '../lib/calculateFee'
-import { getDayType, addMinutesToTime, formatIndonesianDateLong } from '../utils/dateUtils'
+import { getDayType, addMinutesToTime, formatIndonesianDateLong, formatDuration } from '../utils/dateUtils'
 import { formatRupiah } from '../utils/currencyUtils'
 import DatePicker from './DatePicker'
 import { TYPE_INFO } from '../lib/overtimeTypeInfo'
@@ -16,6 +16,8 @@ const EMPTY_FORM = {
   date: '',
   startHour: '05',
   startMinute: '30',
+  endHour: '07',
+  endMinute: '00',
   hours: 1,
   minutes: 30,
   description: '',
@@ -23,7 +25,7 @@ const EMPTY_FORM = {
 }
 
 /** Normalisasi jam/menit mulai menjadi 'HH:mm' (format 24 jam). Null bila tidak valid. */
-function normalizeStartTime(hour, minute) {
+function normalizeTime(hour, minute) {
   const h = Number(hour)
   const m = Number(minute)
   if (!Number.isFinite(h) || !Number.isFinite(m)) return null
@@ -31,6 +33,14 @@ function normalizeStartTime(hour, minute) {
   if (h < 0 || h > 23 || m < 0 || m > 59) return null
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
+
+const timeToMinutes = (t) => {
+  const [h, m] = String(t).split(':').map(Number)
+  return (h || 0) * 60 + (m || 0)
+}
+
+/** Jenis lembur yang durasinya dihitung otomatis dari jam selesai (Pagi, Malam & Pagi+Malam) */
+const isMorningNightType = (t) => t === 'pagi' || t === 'malam' || t === 'pagi_malam'
 
 function todayISO() {
   const now = new Date()
@@ -50,10 +60,13 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
     if (editingRecord) {
       const dur = Number(editingRecord.durationMinutes) || 0
       const [h = '05', m = '30'] = String(editingRecord.startTime || '05:30').split(':')
+      const [eh = '07', em = '00'] = String(editingRecord.endTime || '07:00').split(':')
       setForm({
         date: editingRecord.date || todayISO(),
         startHour: h,
         startMinute: m,
+        endHour: eh,
+        endMinute: em,
         hours: Math.floor(dur / 60),
         minutes: dur % 60,
         description: editingRecord.description || '',
@@ -68,7 +81,7 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
 
   // Jam mulai 'HH:mm' (format 24 jam Indonesia) — null bila tidak valid
   const startTime = useMemo(
-    () => normalizeStartTime(form.startHour, form.startMinute),
+    () => normalizeTime(form.startHour, form.startMinute),
     [form.startHour, form.startMinute],
   )
 
@@ -84,9 +97,38 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayType])
 
-  const durationMinutes = (Number(form.hours) || 0) * 60 + (Number(form.minutes) || 0)
+  // Jam selesai (input manual) — hanya dipakai untuk Pagi & Malam
+  const endTimeInput = useMemo(
+    () => normalizeTime(form.endHour, form.endMinute),
+    [form.endHour, form.endMinute],
+  )
+
+  const isMorningNight = isMorningNightType(form.overtimeType)
+
+  // Durasi & jam selesai dihitung otomatis sesuai jenis lembur
+  const computed = useMemo(() => {
+    if (isMorningNightType(form.overtimeType)) {
+      if (!startTime || !endTimeInput) {
+        return { durationMinutes: 0, endTime: '', nextDay: false, endInvalid: true }
+      }
+      const startMin = timeToMinutes(startTime)
+      const endMin = timeToMinutes(endTimeInput)
+      let diff = endMin - startMin
+      const nextDay = diff <= 0
+      if (diff <= 0) diff += 1440
+      // jam selesai sama dengan jam mulai = tidak valid
+      if (diff === 1440) diff = 0
+      return { durationMinutes: diff, endTime: endTimeInput, nextDay, endInvalid: diff === 0 }
+    }
+    const dur = (Number(form.hours) || 0) * 60 + (Number(form.minutes) || 0)
+    const res = addMinutesToTime(startTime || '00:00', dur)
+    return { durationMinutes: dur, endTime: res.endTime, nextDay: res.nextDay, endInvalid: false }
+  }, [form.overtimeType, form.hours, form.minutes, startTime, endTimeInput])
+
+  const { durationMinutes, endTime, nextDay, endInvalid } = computed
 
   // Weekend: jenis halfday/fullday otomatis mengikuti durasi (<4j / ≥4j)
+  // (hanya untuk jenis non-Pagi/Malam yang durasinya manual)
   useEffect(() => {
     setForm((prev) => {
       if (prev.overtimeType === 'weekend_halfday' && durationMinutes >= 240) {
@@ -99,11 +141,6 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [durationMinutes])
-
-  const { endTime, nextDay } = useMemo(
-    () => addMinutesToTime(startTime || '00:00', durationMinutes),
-    [startTime, durationMinutes],
-  )
 
   const fee = useMemo(
     () =>
@@ -120,7 +157,12 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
     const next = {}
     if (!form.date) next.date = 'Tanggal wajib diisi'
     if (!startTime) next.startTime = 'Jam mulai tidak valid (jam 00–23, menit 00–59)'
-    if (durationMinutes <= 0) next.duration = 'Durasi harus lebih dari 0 menit'
+    if (isMorningNight) {
+      if (!endTimeInput) next.endTime = 'Jam selesai tidak valid (jam 00–23, menit 00–59)'
+      else if (endInvalid) next.endTime = 'Jam selesai tidak boleh sama dengan jam mulai'
+    } else if (durationMinutes <= 0) {
+      next.duration = 'Durasi harus lebih dari 0 menit'
+    }
     if (!form.description.trim()) next.description = 'Keterangan tidak boleh kosong'
     if (!form.overtimeType) next.overtimeType = 'Jenis lembur wajib dipilih'
     setErrors(next)
@@ -150,7 +192,7 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
       onUpdate(editingRecord.id, editable)
     } else {
       onAdd(payload)
-      setForm({ ...EMPTY_FORM, date: form.date, startHour: form.startHour, startMinute: form.startMinute })
+      setForm({ ...EMPTY_FORM, date: form.date })
       setTouched(false)
     }
   }
@@ -237,49 +279,103 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
           {errors.startTime && <p className="mt-0.5 text-xs text-indonesia">{errors.startTime}</p>}
         </div>
 
-        {/* Jam selesai (otomatis) */}
+        {/* Jam selesai — editable (pagi/malam) / otomatis (jenis lainnya) */}
         <div>
-          <label htmlFor="jam-selesai" className="label">Jam Selesai (otomatis)</label>
-          <input
-            id="jam-selesai"
-            type="text"
-            readOnly
-            className="input cursor-default border-dashed bg-brand-50 font-mono text-brand-900/60"
-            value={`${endTime.replace(':', '.')}${nextDay ? ' (+1 hari)' : ''}`}
-            aria-live="polite"
-          />
+          {isMorningNight ? (
+            <>
+              <span className="label" id="jam-selesai-label">Jam Selesai (24 jam) *</span>
+              <div className="flex items-center gap-2" role="group" aria-labelledby="jam-selesai-label">
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  inputMode="numeric"
+                  placeholder="07"
+                  aria-label="Jam selesai (00–23)"
+                  className={`input text-center font-mono ${errors.endTime ? 'input-error' : ''}`}
+                  value={form.endHour}
+                  onChange={(e) => setField('endHour', e.target.value)}
+                />
+                <span className="font-mono text-lg font-bold text-brand-800/60">:</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  inputMode="numeric"
+                  placeholder="00"
+                  aria-label="Menit selesai (00–59)"
+                  className={`input text-center font-mono ${errors.endTime ? 'input-error' : ''}`}
+                  value={form.endMinute}
+                  onChange={(e) => setField('endMinute', e.target.value)}
+                />
+                <span className="text-[11px] font-semibold text-brand-800/55">WIB</span>
+              </div>
+              <p className="mt-1 text-[11px] text-brand-900/55">
+                Selesai {nextDay ? 'besoknya' : 'di hari yang sama'} — durasi dihitung otomatis
+              </p>
+              {errors.endTime && <p className="mt-0.5 text-xs text-indonesia">{errors.endTime}</p>}
+            </>
+          ) : (
+            <>
+              <label htmlFor="jam-selesai" className="label">Jam Selesai (otomatis)</label>
+              <input
+                id="jam-selesai"
+                type="text"
+                readOnly
+                className="input cursor-default border-dashed bg-brand-50 font-mono text-brand-900/60"
+                value={`${(endTime || '').replace(':', '.')}${nextDay ? ' (+1 hari)' : ''}`}
+                aria-live="polite"
+              />
+            </>
+          )}
         </div>
 
-        {/* Durasi */}
+        {/* Durasi — manual untuk jenis lainnya; otomatis untuk Pagi/Malam */}
         <div className="sm:col-span-2">
-          <span className="label" id="durasi-label">Durasi Lembur *</span>
-          <div className="flex items-center gap-2" role="group" aria-labelledby="durasi-label">
-            <input
-              type="number"
-              min="0"
-              max="24"
-              inputMode="numeric"
-              aria-label="Durasi (jam)"
-              className={`input font-mono ${errors.duration ? 'input-error' : ''}`}
-              value={form.hours}
-              onChange={(e) => setField('hours', e.target.value)}
-            />
-            <span className="text-xs text-brand-800/60">jam</span>
-            <input
-              type="number"
-              min="0"
-              max="59"
-              inputMode="numeric"
-              aria-label="Durasi (menit)"
-              className={`input font-mono ${errors.duration ? 'input-error' : ''}`}
-              value={form.minutes}
-              onChange={(e) => setField('minutes', e.target.value)}
-            />
-            <span className="text-xs text-brand-800/60">menit</span>
-          </div>
-          {errors.duration && <p className="mt-1.5 text-xs text-indonesia">{errors.duration}</p>}
-          {dayType === 'weekend' && (
-            <p className="mt-1.5 text-[11px] text-brand-900/55">Weekend: &lt; 4 jam → Rp{FEE.WEEKEND_HALFDAY.toLocaleString('id-ID')} · ≥ 4 jam → Rp{FEE.WEEKEND_FULLDAY.toLocaleString('id-ID')}</p>
+          {isMorningNight ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold-500/50 bg-gold-400/15 px-4 py-3">
+              <div>
+                <p className="label !mb-0.5">Durasi Lembur (otomatis)</p>
+                <p className="font-mono text-xl font-semibold text-brand-950">
+                  {durationMinutes > 0 ? formatDuration(durationMinutes) : '—'}
+                </p>
+              </div>
+              <p className="max-w-[220px] text-right text-[10px] leading-snug text-brand-900/55">
+                Dihitung otomatis dari<br />jam mulai &amp; jam selesai
+              </p>
+            </div>
+          ) : (
+            <>
+              <span className="label" id="durasi-label">Durasi Lembur *</span>
+              <div className="flex items-center gap-2" role="group" aria-labelledby="durasi-label">
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  inputMode="numeric"
+                  aria-label="Durasi (jam)"
+                  className={`input font-mono ${errors.duration ? 'input-error' : ''}`}
+                  value={form.hours}
+                  onChange={(e) => setField('hours', e.target.value)}
+                />
+                <span className="text-xs text-brand-800/60">jam</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  inputMode="numeric"
+                  aria-label="Durasi (menit)"
+                  className={`input font-mono ${errors.duration ? 'input-error' : ''}`}
+                  value={form.minutes}
+                  onChange={(e) => setField('minutes', e.target.value)}
+                />
+                <span className="text-xs text-brand-800/60">menit</span>
+              </div>
+              {errors.duration && <p className="mt-1.5 text-xs text-indonesia">{errors.duration}</p>}
+              {dayType === 'weekend' && (
+                <p className="mt-1.5 text-[11px] text-brand-900/55">Weekend: &lt; 4 jam → Rp{FEE.WEEKEND_HALFDAY.toLocaleString('id-ID')} · ≥ 4 jam → Rp{FEE.WEEKEND_FULLDAY.toLocaleString('id-ID')}</p>
+              )}
+            </>
           )}
         </div>
 
@@ -290,7 +386,30 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
             id="jenis"
             className={`input ${errors.overtimeType ? 'input-error' : ''}`}
             value={form.overtimeType}
-            onChange={(e) => setField('overtimeType', e.target.value)}
+            onChange={(e) => {
+              const nextType = e.target.value
+              setForm((prev) => {
+                const next = { ...prev, overtimeType: nextType }
+                // Pagi + Malam: saran jam mulai 06.00 & jam selesai 20.00
+                if (nextType === 'pagi_malam') {
+                  next.startHour = '06'
+                  next.startMinute = '00'
+                  next.endHour = '20'
+                  next.endMinute = '00'
+                } else if (nextType === 'pagi' && prev.overtimeType !== 'pagi') {
+                  next.startHour = '05'
+                  next.startMinute = '30'
+                  next.endHour = '07'
+                  next.endMinute = '00'
+                } else if (nextType === 'malam' && prev.overtimeType !== 'malam') {
+                  next.startHour = '17'
+                  next.startMinute = '00'
+                  next.endHour = '20'
+                  next.endMinute = '00'
+                }
+                return next
+              })
+            }}
           >
             <optgroup label="Weekday (Senin–Jumat)">
               {OVERTIME_TYPES.filter((t) => t.group.startsWith('Weekday')).map((t) => (

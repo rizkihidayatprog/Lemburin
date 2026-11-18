@@ -22,7 +22,7 @@ export const OVERTIME_TYPES = [
   { value: 'pagi_malam',        label: 'Pagi + Malam',        group: 'Weekday (Senin–Jumat)' },
   { value: 'overnight',         label: 'Overnight (Menginap)', group: 'Weekday (Senin–Jumat)' },
   { value: 'weekend_halfday',   label: 'Weekend Halfday (< 4 jam)', group: 'Weekend (Sabtu–Minggu)' },
-  { value: 'weekend_fullday',   label: 'Weekend Fullday (≥ 4 jam)', group: 'Weekend (Sabtu–Minggu)' },
+  { value: 'weekend_fullday',   label: 'Weekend Fullday (min. 4 jam)', group: 'Weekend (Sabtu–Minggu)' },
   { value: 'weekend_overnight', label: 'Weekend Overnight (Menginap)', group: 'Weekend (Sabtu–Minggu)' },
 ]
 

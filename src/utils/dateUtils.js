@@ -1,5 +1,22 @@
 // Utilitas tanggal & waktu — semua perhitungan hari memakai kalender lokal (WIB, Asia/Jakarta)
 
+/** Urutkan record: tanggal terlama → terbaru (tie-break jam mulai) */
+export function sortByDateAsc(records) {
+  return [...(records || [])].sort((a, b) => {
+    const cmp = String(a?.date || '').localeCompare(String(b?.date || ''))
+    if (cmp !== 0) return cmp
+    return String(a?.startTime || '').localeCompare(String(b?.startTime || ''))
+  })
+}
+
+/** Slug periode untuk nama FILE: bulan & tahun tanggal terbaru, mis. 'November_2026' */
+export function filePeriodSlug(records) {
+  const dates = (records || []).map((r) => r?.date).filter(Boolean).sort()
+  if (!dates.length) return 'Semua_Periode'
+  const d = parseDateLocal(dates[dates.length - 1])
+  return `${BULAN_ID[d.getMonth()]}_${d.getFullYear()}`
+}
+
 export const HARI_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
 export const BULAN_ID = [

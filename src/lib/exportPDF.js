@@ -1,15 +1,15 @@
 // Export laporan lembur ke .pdf (jsPDF + autoTable), A4 landscape
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { formatIndonesianDate, formatTimeDots, periodeFromRecords, getExportTimestamp } from '../utils/dateUtils'
+import { formatIndonesianDate, formatTimeDots, periodeFromRecords, getExportTimestamp, sortByDateAsc, filePeriodSlug } from '../utils/dateUtils'
 import { OVERTIME_TYPE_LABELS } from './calculateFee'
-import { TYPE_INFO } from './overtimeTypeInfo'
 import { formatRupiah } from '../utils/currencyUtils'
 
 /** Bangun dokumen PDF tanpa mengunduh — dipakai oleh modal pratinjau */
 export function generateOvertimePDF(records, summary, profile) {
   const periode = periodeFromRecords(records)
-  const fileName = `Laporan_Lembur_${periode.slug}.pdf`
+  const sorted = sortByDateAsc(records)
+  const fileName = `Laporan_Lembur_${filePeriodSlug(sorted)}.pdf`
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
@@ -47,7 +47,7 @@ export function generateOvertimePDF(records, summary, profile) {
   autoTable(doc, {
     startY: accentY + 6,
     head: [['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'Jenis Lembur', 'FEE']],
-    body: records.map((r) => [
+    body: sorted.map((r) => [
       formatIndonesianDate(r.date),
       `${formatTimeDots(r.startTime)}–${formatTimeDots(r.endTime)}`,
       r.description || '-',
@@ -111,28 +111,6 @@ export function generateOvertimePDF(records, summary, profile) {
     styles: { fontSize: 8.5, cellPadding: 2.5 },
     headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: { 2: { halign: 'right' } },
-    theme: 'grid',
-    margin: { left: 14, right: 14 },
-  })
-
-  // Keterangan jenis lembur
-  y = doc.lastAutoTable.finalY + 8
-  if (y > 140) {
-    doc.addPage()
-    y = 18
-  }
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(74, 14, 10)
-  doc.text('KETERANGAN JENIS LEMBUR', 14, y)
-  y += 2
-  autoTable(doc, {
-    startY: y,
-    head: [['Jenis', 'Keterangan']],
-    body: TYPE_INFO.map((t) => [t.shortLabel || t.label, t.desc]),
-    styles: { fontSize: 8, cellPadding: 2.5 },
-    headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
-    columnStyles: { 0: { cellWidth: 42, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
     theme: 'grid',
     margin: { left: 14, right: 14 },
   })
