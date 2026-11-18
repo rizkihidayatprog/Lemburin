@@ -4,8 +4,8 @@ export const TYPE_INFO = [
   { value: 'malam',             label: 'Malam',             desc: 'Lembur setelah jam kerja (sore/malam/luar jam kantor) → Rp35.000' },
   { value: 'pagi_malam',        label: 'Pagi + Malam',      desc: 'Lembur pagi DAN malam di hari yang sama → pagi + Rp35.000 (maksimal Rp65.000)' },
   { value: 'overnight',         label: 'Overnight',         desc: 'Menginap lembur di hari kerja → Rp50.000 (menggantikan fee pagi/malam, tidak di-stack)' },
-  { value: 'weekend_halfday',   label: 'Weekend Halfday',   desc: 'Weekend (Sabtu/Minggu) dengan durasi < 4 jam → Rp40.000' },
-  { value: 'weekend_fullday',   label: 'Weekend Fullday',   desc: 'Weekend (Sabtu/Minggu) dengan durasi ≥ 4 jam → Rp80.000' },
+  { value: 'weekend_halfday',   label: 'Weekend Halfday',   shortLabel: 'Halfday', desc: 'Weekend (Sabtu/Minggu) dengan durasi < 4 jam → Rp40.000' },
+  { value: 'weekend_fullday',   label: 'Weekend Fullday',   shortLabel: 'Fullday', desc: 'Weekend (Sabtu/Minggu) dengan durasi ≥ 4 jam → Rp80.000' },
   { value: 'weekend_overnight', label: 'Weekend Overnight', desc: 'Menginap lembur di weekend → Rp100.000 (menggantikan halfday/fullday)' },
 ]
 

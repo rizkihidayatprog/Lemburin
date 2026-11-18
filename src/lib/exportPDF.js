@@ -129,7 +129,7 @@ export function generateOvertimePDF(records, summary, profile) {
   autoTable(doc, {
     startY: y,
     head: [['Jenis', 'Keterangan']],
-    body: TYPE_INFO.map((t) => [t.label, t.desc]),
+    body: TYPE_INFO.map((t) => [t.shortLabel || t.label, t.desc]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: { 0: { cellWidth: 42, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },

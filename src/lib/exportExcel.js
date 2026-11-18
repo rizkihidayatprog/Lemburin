@@ -215,7 +215,7 @@ export async function exportOvertimeExcel(records, summary, profile) {
     const rowIndex = cursor + 1 + i
     ws.mergeCells(`B${rowIndex}:E${rowIndex}`)
     const row = ws.getRow(rowIndex)
-    row.getCell(1).value = t.label
+    row.getCell(1).value = t.shortLabel || t.label
     row.getCell(2).value = t.desc
     row.getCell(1).border = thinBorder()
     row.getCell(2).border = thinBorder()
