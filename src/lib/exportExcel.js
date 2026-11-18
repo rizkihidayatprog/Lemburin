@@ -37,11 +37,11 @@ export async function exportOvertimeExcel(records, summary, profile) {
   const fileName = `Laporan_Lembur_${periode.slug}.xlsx`
 
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'Overtime Management'
+  wb.creator = profile?.nama || 'Lemburin'
   wb.created = new Date()
 
-  const ws = wb.addWorksheet('Laporan Lembur', {
-    views: [{ showGridLines: false, state: 'frozen', ySplit: 6 }],
+  const ws = wb.addWorksheet('Rekap', {
+    views: [{ showGridLines: false, state: 'frozen', ySplit: 5 }],
   })
 
   ws.columns = [
@@ -52,46 +52,38 @@ export async function exportOvertimeExcel(records, summary, profile) {
     { key: 'jenis', width: 30 },
   ]
 
-  // ── Judul ────────────────────────────────────────────────────────────
+  // Tanpa judul/branding — file langsung mulai dari periode & profil
   ws.mergeCells('A1:E1')
-  const title = ws.getCell('A1')
-  title.value = 'LAPORAN LEMBUR'
-  title.font = { name: 'Calibri', size: 22, bold: true, color: { argb: 'FFFFFFFF' } }
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${RED}` } }
-  title.alignment = { vertical: 'middle', horizontal: 'center' }
-  ws.getRow(1).height = 42
+  const per = ws.getCell('A1')
+  per.value = `Periode: ${periode.rangeLabel}`
+  per.font = { size: 13, bold: true, color: { argb: `FF${BRAND_950}` } }
+  per.alignment = { vertical: 'middle', horizontal: 'center' }
+  ws.getRow(1).height = 24
 
   ws.mergeCells('A2:E2')
-  const per = ws.getCell('A2')
-  per.value = `Periode: ${periode.rangeLabel}`
-  per.font = { size: 12, bold: true, color: { argb: `FF${BRAND_950}` } }
-  per.alignment = { vertical: 'middle', horizontal: 'center' }
-  ws.getRow(2).height = 22
-
-  ws.mergeCells('A3:E3')
-  const dicetak = ws.getCell('A3')
+  const dicetak = ws.getCell('A2')
   dicetak.value = `Dicetak: ${getExportTimestamp()} WIB   |   Zona waktu: Asia/Jakarta (WIB)`
   dicetak.font = { size: 9, italic: true, color: { argb: `FF${MUTED}` } }
   dicetak.alignment = { vertical: 'middle', horizontal: 'center' }
-  ws.getRow(3).height = 18
+  ws.getRow(2).height = 18
 
-  ws.mergeCells('A4:E4')
-  const prof = ws.getCell('A4')
+  ws.mergeCells('A3:E3')
+  const prof = ws.getCell('A3')
   prof.value = profileLine(profile)
   prof.font = { size: 10, bold: true, color: { argb: `FF${BRAND_950}` } }
   prof.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${GOLD_SOFT}` } }
   prof.alignment = { vertical: 'middle', horizontal: 'center' }
   prof.border = thinBorder(GOLD)
-  ws.getRow(4).height = 22
+  ws.getRow(3).height = 22
 
   // Garis aksen kuning
-  ws.mergeCells('A5:E5')
-  const accent = ws.getCell('A5')
+  ws.mergeCells('A4:E4')
+  const accent = ws.getCell('A4')
   accent.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${GOLD}` } }
-  ws.getRow(5).height = 5
+  ws.getRow(4).height = 5
 
   // ── Header tabel ─────────────────────────────────────────────────────
-  const headerRow = ws.getRow(6)
+  const headerRow = ws.getRow(5)
   headerRow.values = ['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'FEE', 'Jenis Lembur']
   headerRow.eachCell((cell) => {
     cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }
@@ -103,7 +95,7 @@ export async function exportOvertimeExcel(records, summary, profile) {
 
   // ── Data ─────────────────────────────────────────────────────────────
   records.forEach((r, i) => {
-    const rowIndex = 7 + i
+    const rowIndex = 6 + i
     const row = ws.getRow(rowIndex)
     row.values = [
       formatIndonesianDate(r.date),
@@ -127,8 +119,8 @@ export async function exportOvertimeExcel(records, summary, profile) {
     row.height = 21
   })
 
-  const dataEnd = 6 + records.length
-  ws.autoFilter = `A6:E${Math.max(dataEnd, 6)}`
+  const dataEnd = 5 + records.length
+  ws.autoFilter = `A5:E${Math.max(dataEnd, 5)}`
 
   // ── Total ────────────────────────────────────────────────────────────
   let cursor = dataEnd + 2 // 1 baris kosong
@@ -220,7 +212,7 @@ export async function exportOvertimeExcel(records, summary, profile) {
   ws.pageSetup.horizontalCentered = true
   ws.headerFooter = {
     oddHeader: '',
-    oddFooter: '&L&8Overtime Management&C&8LAPORAN LEMBUR&C&8   &P dari &N&R&8Dicetak: &D',
+    oddFooter: `&L&8${periode.label}&C&8Dicetak: &D&R&8Halaman &P dari &N`,
   }
 
   const buffer = await wb.xlsx.writeBuffer()

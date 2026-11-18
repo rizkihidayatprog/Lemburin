@@ -5,35 +5,24 @@ import { formatIndonesianDate, formatTimeDots, periodeFromRecords, getExportTime
 import { OVERTIME_TYPE_LABELS } from './calculateFee'
 import { formatRupiah } from '../utils/currencyUtils'
 
-export function exportOvertimePDF(records, summary, profile) {
+/** Bangun dokumen PDF tanpa mengunduh — dipakai oleh modal pratinjau */
+export function generateOvertimePDF(records, summary, profile) {
   const periode = periodeFromRecords(records)
   const fileName = `Laporan_Lembur_${periode.slug}.pdf`
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
-  // Header — banner merah dengan judul putih, garis aksen kuning
+  // Tanpa judul/branding — file langsung mulai dari periode & profil
+  // Garis aksen kuning tipis di paling atas
   const PAGE_W = 297 // A4 landscape
-  doc.setFillColor(206, 17, 38)
-  doc.rect(0, 0, PAGE_W, 26, 'F')
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(19)
-  doc.setTextColor(255, 255, 255)
-  doc.text('LAPORAN LEMBUR', 14, 13)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8.5)
-  doc.setTextColor(254, 226, 226)
-  doc.text('Overtime Management', 14, 20)
-
-  // Garis aksen kuning
   doc.setFillColor(250, 204, 21)
-  doc.rect(0, 26, PAGE_W, 2.2, 'F')
+  doc.rect(0, 0, PAGE_W, 2.2, 'F')
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(107, 26, 21)
-  doc.text(`Periode: ${periode.rangeLabel}`, 14, 37)
-  doc.text(`Dicetak: ${getExportTimestamp()} WIB  |  Zona waktu: Asia/Jakarta (WIB)`, 14, 43)
+  doc.text(`Periode: ${periode.rangeLabel}`, 14, 14)
+  doc.text(`Dicetak: ${getExportTimestamp()} WIB`, 14, 20)
 
   // Baris profil — selalu tampil (placeholder bila belum diisi)
   const profParts = profile?.nama || profile?.divisi || profile?.jabatan
@@ -45,13 +34,13 @@ export function exportOvertimePDF(records, summary, profile) {
     : ['Nama: -   |   Divisi: -   |   Jabatan: -']
 
   doc.setFillColor(254, 243, 199)
-  doc.roundedRect(14, 46, 269, 8, 1.5, 1.5, 'F')
+  doc.roundedRect(14, 24, 269, 8, 1.5, 1.5, 'F')
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9.5)
   doc.setTextColor(74, 14, 10)
-  doc.text(profParts.join('   |   '), 18, 51.4)
+  doc.text(profParts.join('   |   '), 18, 29.4)
 
-  const accentY = 58
+  const accentY = 36
 
   // Tabel detail
   autoTable(doc, {
@@ -132,10 +121,23 @@ export function exportOvertimePDF(records, summary, profile) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(140, 58, 50)
-    doc.text(`Laporan Lembur — ${periode.label}`, 14, 200)
+    doc.text(String(periode.label), 14, 200)
     doc.text(`Halaman ${page} dari ${totalPages}`, 283, 200, { align: 'right' })
   }
 
-  doc.save(fileName)
+  return { blob: doc.output('blob'), fileName, periodeLabel: periode.label }
+}
+
+/** Unduh langsung tanpa pratinjau (fallback) */
+export function exportOvertimePDF(records, summary, profile) {
+  const { blob, fileName } = generateOvertimePDF(records, summary, profile)
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
   return fileName
 }

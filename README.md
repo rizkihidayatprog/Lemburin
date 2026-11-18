@@ -14,7 +14,7 @@ Aplikasi web pencatatan, perhitungan otomatis, dan rekap fee lembur. Dibuat sesu
 - **Profil Anda**: isi Nama, Divisi & Jabatan (tombol di bawah sidebar) — tampil di sidebar, header, dan otomatis tercetak di laporan export Excel & PDF
 - Filter tabel: status ACC, bulan, tahun, jenis lembur, pencarian keterangan, rentang tanggal
 - Rekap fee per kategori + agregat (pagi/malam/overnight/weekend)
-- Export **Excel (.xlsx)** dan **PDF (A4 landscape)** — nama file periode otomatis, mis. `Laporan_Lembur_Oktober_s.d._November_2026.xlsx`
+- Export **Excel (.xlsx)** langsung mengunduh, **PDF** dipreview dulu di dalam aplikasi (tombol **Download PDF**) — nama file periode otomatis, mis. `Laporan_Lembur_Oktober_s.d._November_2026.xlsx`
 - Realtime via Firestore `onSnapshot` (atau mode lokal `localStorage` jika Firebase belum diisi)
 - Responsif mobile & desktop, timezone Asia/Jakarta (WIB), Bahasa Indonesia, tema merah–putih–kuning
 

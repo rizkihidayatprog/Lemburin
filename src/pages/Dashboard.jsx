@@ -10,6 +10,7 @@ import AccHistory from '../components/AccHistory'
 import ToastContainer from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProfileDialog from '../components/ProfileDialog'
+import PdfPreviewModal from '../components/PdfPreviewModal'
 import { getProfile, saveProfile } from '../services/profileService'
 import {
   subscribeOvertime,
@@ -57,6 +58,7 @@ export default function Dashboard() {
   const [accLoading, setAccLoading] = useState(false)
   const [profile, setProfile] = useState(() => getProfile())
   const [profileOpen, setProfileOpen] = useState(false)
+  const [pdfPreview, setPdfPreview] = useState(null) // { url, fileName, subtitle }
   const [toasts, setToasts] = useState([])
   const toastId = useRef(0)
   const purgedRef = useRef(false)
@@ -192,12 +194,17 @@ export default function Dashboard() {
           const { exportOvertimeExcel } = await import('../lib/exportExcel')
           const fileName = exportOvertimeExcel(pending, rekapSummary, profile)
           showToast(`File ${fileName} berhasil dibuat`, 'success')
+          if (!profile?.nama) showToast('Tips: isi Profil (Nama/Divisi/Jabatan) di sidebar agar tercetak di laporan', 'info')
         } else {
-          const { exportOvertimePDF } = await import('../lib/exportPDF')
-          const fileName = exportOvertimePDF(pending, rekapSummary, profile)
-          showToast(`File ${fileName} berhasil dibuat`, 'success')
+          const { generateOvertimePDF } = await import('../lib/exportPDF')
+          const { blob, fileName, periodeLabel } = generateOvertimePDF(pending, rekapSummary, profile)
+          setPdfPreview({
+            url: URL.createObjectURL(blob),
+            fileName,
+            subtitle: `Periode ${periodeLabel} · ${rekapSummary.totalRecords} data · ${formatRupiah(rekapSummary.totalFee)}`,
+          })
+          if (!profile?.nama) showToast('Tips: isi Profil (Nama/Divisi/Jabatan) di sidebar agar tercetak di laporan', 'info')
         }
-        if (!profile?.nama) showToast('Tips: isi Profil (Nama/Divisi/Jabatan) di sidebar agar tercetak di laporan', 'info')
       } catch (error) {
         console.error(error)
         showToast(`Gagal membuat file ${format === 'excel' ? 'Excel' : 'PDF'}`, 'error')
@@ -217,9 +224,13 @@ export default function Dashboard() {
           const fileName = exportOvertimeExcel(batch.items, batchSummary, profile)
           showToast(`File ${fileName} berhasil dibuat`, 'success')
         } else {
-          const { exportOvertimePDF } = await import('../lib/exportPDF')
-          const fileName = exportOvertimePDF(batch.items, batchSummary, profile)
-          showToast(`File ${fileName} berhasil dibuat`, 'success')
+          const { generateOvertimePDF } = await import('../lib/exportPDF')
+          const { blob, fileName, periodeLabel } = generateOvertimePDF(batch.items, batchSummary, profile)
+          setPdfPreview({
+            url: URL.createObjectURL(blob),
+            fileName,
+            subtitle: `Periode ${periodeLabel} · ${batch.items.length} data · ${formatRupiah(batchSummary.totalFee)}`,
+          })
         }
       } catch (error) {
         console.error(error)
@@ -242,6 +253,29 @@ export default function Dashboard() {
       setDeletingBatch(null)
     }
   }, [showToast])
+
+  const handleDownloadPdf = useCallback(() => {
+    setPdfPreview((prev) => {
+      if (prev?.url) {
+        const link = document.createElement('a')
+        link.href = prev.url
+        link.download = prev.fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(prev.url)
+        showToast(`File ${prev.fileName} berhasil diunduh`, 'success')
+      }
+      return null
+    })
+  }, [showToast])
+
+  const handleClosePdfPreview = useCallback(() => {
+    setPdfPreview((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url)
+      return null
+    })
+  }, [])
 
   // ── Handlers: ACC ──────────────────────────────────────────────────────
   const handleAccConfirm = useCallback(async () => {
@@ -394,6 +428,16 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+
+      {/* Pratinjau PDF */}
+      <PdfPreviewModal
+        open={Boolean(pdfPreview)}
+        url={pdfPreview?.url}
+        fileName={pdfPreview?.fileName}
+        subtitle={pdfPreview?.subtitle}
+        onClose={handleClosePdfPreview}
+        onDownload={handleDownloadPdf}
+      />
 
       {/* Dialog profil */}
       <ProfileDialog
