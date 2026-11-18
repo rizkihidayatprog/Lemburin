@@ -23,13 +23,13 @@ function thinBorder(color = WARM_BORDER) {
 }
 
 function profileLine(profile) {
-  if (!profile) return 'Nama: -   |   Divisi: -   |   Jabatan: -'
+  if (!profile) return null
   const parts = [
-    `Nama: ${profile.nama || '-'}`,
-    `Divisi: ${profile.divisi || '-'}`,
-    `Jabatan: ${profile.jabatan || '-'}`,
-  ]
-  return parts.join('   |   ')
+    profile.nama ? `Nama: ${profile.nama}` : null,
+    profile.divisi ? `Divisi: ${profile.divisi}` : null,
+    profile.jabatan ? `Jabatan: ${profile.jabatan}` : null,
+  ].filter(Boolean)
+  return parts.length ? parts.join('   |   ') : null
 }
 
 export async function exportOvertimeExcel(records, summary, profile) {

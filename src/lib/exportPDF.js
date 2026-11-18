@@ -25,23 +25,23 @@ export function generateOvertimePDF(records, summary, profile) {
   doc.text(`Periode: ${periode.rangeLabel}`, 14, 14)
   doc.text(`Dicetak: ${getExportTimestamp()} WIB`, 14, 20)
 
-  // Baris profil — selalu tampil (placeholder bila belum diisi)
-  const profParts = profile?.nama || profile?.divisi || profile?.jabatan
-    ? [
-        `Nama: ${profile?.nama || '-'}`,
-        `Divisi: ${profile?.divisi || '-'}`,
-        `Jabatan: ${profile?.jabatan || '-'}`,
-      ]
-    : ['Nama: -   |   Divisi: -   |   Jabatan: -']
+  // Baris profil — hanya tampil bila terisi (sebagian/seluruh kosong = row dikosongkan)
+  const profParts = [
+    profile?.nama ? `Nama: ${profile.nama}` : null,
+    profile?.divisi ? `Divisi: ${profile.divisi}` : null,
+    profile?.jabatan ? `Jabatan: ${profile.jabatan}` : null,
+  ].filter(Boolean)
 
-  doc.setFillColor(254, 243, 199)
-  doc.roundedRect(14, 24, 269, 8, 1.5, 1.5, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9.5)
-  doc.setTextColor(74, 14, 10)
-  doc.text(profParts.join('   |   '), 18, 29.4)
-
-  const accentY = 36
+  let accentY = 30
+  if (profParts.length) {
+    doc.setFillColor(254, 243, 199)
+    doc.roundedRect(14, 24, 269, 8, 1.5, 1.5, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9.5)
+    doc.setTextColor(74, 14, 10)
+    doc.text(profParts.join('   |   '), 18, 29.4)
+    accentY = 36
+  }
 
   // Tabel detail
   autoTable(doc, {
