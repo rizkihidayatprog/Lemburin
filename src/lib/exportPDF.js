@@ -45,13 +45,13 @@ export function generateOvertimePDF(records, summary, profile) {
   // Tabel detail
   autoTable(doc, {
     startY: accentY + 6,
-    head: [['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'FEE', 'Jenis Lembur']],
+    head: [['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'Jenis Lembur', 'FEE']],
     body: records.map((r) => [
       formatIndonesianDate(r.date),
       `${formatTimeDots(r.startTime)}–${formatTimeDots(r.endTime)}`,
       r.description || '-',
-      formatRupiah(r.fee),
       OVERTIME_TYPE_LABELS[r.overtimeType] || r.overtimeType || '-',
+      formatRupiah(r.fee),
     ]),
     styles: { fontSize: 8, cellPadding: 2.5, textColor: [74, 14, 10] },
     headStyles: { fillColor: [206, 17, 38], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
@@ -60,8 +60,8 @@ export function generateOvertimePDF(records, summary, profile) {
       0: { cellWidth: 42 },
       1: { cellWidth: 32 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 32, halign: 'right' },
-      4: { cellWidth: 52 },
+      3: { cellWidth: 52 },
+      4: { cellWidth: 32, halign: 'right' },
     },
     theme: 'grid',
     margin: { left: 14, right: 14 },

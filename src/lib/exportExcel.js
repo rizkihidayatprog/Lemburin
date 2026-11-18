@@ -48,8 +48,8 @@ export async function exportOvertimeExcel(records, summary, profile) {
     { key: 'tanggal', width: 27 },
     { key: 'waktu', width: 17 },
     { key: 'keterangan', width: 46 },
-    { key: 'fee', width: 20 },
     { key: 'jenis', width: 30 },
+    { key: 'fee', width: 20 },
   ]
 
   // Tanpa judul/branding — file langsung mulai dari periode & profil
@@ -84,7 +84,7 @@ export async function exportOvertimeExcel(records, summary, profile) {
 
   // ── Header tabel ─────────────────────────────────────────────────────
   const headerRow = ws.getRow(5)
-  headerRow.values = ['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'FEE', 'Jenis Lembur']
+  headerRow.values = ['HARI/TANGGAL', 'WAKTU', 'KETERANGAN', 'Jenis Lembur', 'FEE']
   headerRow.eachCell((cell) => {
     cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${RED_DARK}` } }
@@ -101,8 +101,8 @@ export async function exportOvertimeExcel(records, summary, profile) {
       formatIndonesianDate(r.date),
       waKu(r),
       r.description || '-',
-      Number(r.fee) || 0,
       OVERTIME_TYPE_LABELS[r.overtimeType] || r.overtimeType || '-',
+      Number(r.fee) || 0,
     ]
     const isZebra = i % 2 === 1
     row.eachCell((cell) => {
@@ -112,10 +112,10 @@ export async function exportOvertimeExcel(records, summary, profile) {
     })
     row.getCell(1).font = { size: 10, bold: true, color: { argb: `FF${BRAND_950}` } }
     row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' }
-    row.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' }
-    row.getCell(4).numFmt = '"Rp"#,##0'
-    row.getCell(4).font = { size: 10, bold: true, color: { argb: 'FFCE1126' } }
-    row.getCell(5).alignment = { vertical: 'middle' }
+    row.getCell(4).alignment = { vertical: 'middle' }
+    row.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' }
+    row.getCell(5).numFmt = '"Rp"#,##0'
+    row.getCell(5).font = { size: 10, bold: true, color: { argb: 'FFCE1126' } }
     row.height = 21
   })
 
@@ -128,21 +128,19 @@ export async function exportOvertimeExcel(records, summary, profile) {
   const totalFeeRow = ws.getRow(cursor)
   ws.mergeCells(`C${cursor}:D${cursor}`)
   totalFeeRow.getCell(3).value = 'TOTAL FEE'
-  totalFeeRow.getCell(5).value = null
   totalFeeRow.getCell(3).font = { size: 12, bold: true, color: { argb: `FF${BRAND_950}` } }
   totalFeeRow.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' }
-  totalFeeRow.getCell(4).value = null
-  // fee total diletakkan di kolom D? sudah di-merge C:D — pakai kolom D kosong, taruh fee di E? Lebih bersih: label C:D, value tetap di kolom D tidak bisa setelah merge. Pindahkan value ke kolom E? Kolom D bagian dari merge -> tidak bisa diisi.
-  // Solusi: jangan merge untuk baris ini; label di C, value di D.
-  ws.unMergeCells(`C${cursor}:D${cursor}`)
-  totalFeeRow.getCell(4).value = summary.totalFee
-  totalFeeRow.getCell(4).numFmt = '"Rp"#,##0'
-  totalFeeRow.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' }
-  totalFeeRow.getCell(4).font = { size: 12, bold: true, color: { argb: `FF${BRAND_950}` } }
+  // Fee total di kolom E (kolom FEE)
+  totalFeeRow.getCell(5).value = summary.totalFee
+  totalFeeRow.getCell(5).numFmt = '"Rp"#,##0'
+  totalFeeRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' }
+  totalFeeRow.getCell(5).font = { size: 12, bold: true, color: { argb: `FF${BRAND_950}` } }
   totalFeeRow.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${GOLD_SOFT}` } }
   totalFeeRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${GOLD_SOFT}` } }
+  totalFeeRow.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${GOLD_SOFT}` } }
   totalFeeRow.getCell(3).border = { top: { style: 'double', color: { argb: `FF${RED_DARK}` } }, bottom: thinBorder(GOLD).bottom, left: thinBorder(GOLD).left, right: thinBorder(GOLD).right }
   totalFeeRow.getCell(4).border = { top: { style: 'double', color: { argb: `FF${RED_DARK}` } }, bottom: thinBorder(GOLD).bottom, left: thinBorder(GOLD).left, right: thinBorder(GOLD).right }
+  totalFeeRow.getCell(5).border = { top: { style: 'double', color: { argb: `FF${RED_DARK}` } }, bottom: thinBorder(GOLD).bottom, left: thinBorder(GOLD).left, right: thinBorder(GOLD).right }
   totalFeeRow.height = 26
 
   const totals = [
@@ -152,11 +150,12 @@ export async function exportOvertimeExcel(records, summary, profile) {
   ]
   totals.forEach(([label, value], i) => {
     const row = ws.getRow(cursor + 1 + i)
+    ws.mergeCells(`C${cursor + 1 + i}:D${cursor + 1 + i}`)
     row.getCell(3).value = label
-    row.getCell(4).value = value
+    row.getCell(5).value = value
     row.getCell(3).font = { size: 10, bold: true, color: { argb: `FF${MUTED}` } }
-    row.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' }
-    row.getCell(4).font = { size: 10, bold: true, color: { argb: `FF${BRAND_950}` } }
+    row.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' }
+    row.getCell(5).font = { size: 10, bold: true, color: { argb: `FF${BRAND_950}` } }
     row.height = 19
   })
 

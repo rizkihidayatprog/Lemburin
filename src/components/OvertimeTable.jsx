@@ -80,8 +80,8 @@ export default function OvertimeTable({
               </th>
               <th className="px-4 py-2.5 font-semibold">Waktu</th>
               <th className="px-4 py-2.5 font-semibold">Keterangan</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Fee</th>
               <th className="px-4 py-2.5 font-semibold">Jenis</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Fee</th>
               <th className="px-4 py-2.5 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
@@ -97,13 +97,13 @@ export default function OvertimeTable({
                   <td className="max-w-[240px] px-4 py-2.5 text-brand-900/85">
                     <span className="line-clamp-2">{row.description}</span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono text-xs font-semibold text-indonesia">{formatRupiah(row.fee)}</td>
                   <td className="px-4 py-2.5">
                     <span className="chip">{OVERTIME_TYPE_LABELS[row.overtimeType] || row.overtimeType}</span>
                     {isAcc && (
                       <span className="chip ml-1 !border-gold-600/50 !bg-gold-300/40 !text-gold-700"><Lock size={10} className="mr-1 inline" aria-hidden="true" />ACC</span>
                     )}
                   </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono text-xs font-semibold text-indonesia">{formatRupiah(row.fee)}</td>
                   <td className="px-4 py-2.5">
                     {isAcc ? (
                       <span className="text-center text-[10px] text-brand-900/45">terkunci</span>
