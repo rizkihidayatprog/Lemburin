@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Save, XCircle } from 'lucide-react'
+import { Save, XCircle } from 'lucide-react'
 import {
   OVERTIME_TYPES,
   calculateFee,
@@ -9,6 +9,7 @@ import {
 } from '../lib/calculateFee'
 import { getDayType, addMinutesToTime, formatIndonesianDateLong } from '../utils/dateUtils'
 import { formatRupiah } from '../utils/currencyUtils'
+import DatePicker from './DatePicker'
 
 const EMPTY_FORM = {
   date: '',
@@ -186,17 +187,13 @@ export default function OvertimeForm({ editingRecord, onAdd, onUpdate, onCancelE
         {/* Tanggal */}
         <div className="sm:col-span-2">
           <label htmlFor="tanggal" className="label">Tanggal Lembur *</label>
-          <div className="relative">
-            <CalendarDays size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-800/40" aria-hidden="true" />
-            <input
-              id="tanggal"
-              type="date"
-              className={`input !pl-9 ${errors.date ? 'input-error' : ''}`}
-              value={form.date}
-              onChange={(e) => setField('date', e.target.value)}
-              required
-            />
-          </div>
+          <DatePicker
+            id="tanggal"
+            value={form.date}
+            onChange={(v) => setField('date', v)}
+            invalid={Boolean(errors.date)}
+            ariaLabel="Pilih tanggal lembur"
+          />
           {form.date && (
             <p className="mt-1.5 text-[11px] text-brand-900/60">
               {formatIndonesianDateLong(form.date)} ·{' '}

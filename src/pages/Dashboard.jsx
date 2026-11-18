@@ -197,6 +197,7 @@ export default function Dashboard() {
           const fileName = exportOvertimePDF(pending, rekapSummary, profile)
           showToast(`File ${fileName} berhasil dibuat`, 'success')
         }
+        if (!profile?.nama) showToast('Tips: isi Profil (Nama/Divisi/Jabatan) di sidebar agar tercetak di laporan', 'info')
       } catch (error) {
         console.error(error)
         showToast(`Gagal membuat file ${format === 'excel' ? 'Excel' : 'PDF'}`, 'error')

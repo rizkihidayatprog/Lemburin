@@ -1,6 +1,7 @@
-import { Search, RotateCcw, ChevronDown } from 'lucide-react'
+import { Search, RotateCcw, ChevronDown, X } from 'lucide-react'
 import { BULAN_ID } from '../utils/dateUtils'
 import { OVERTIME_TYPES } from '../lib/calculateFee'
+import DatePicker from './DatePicker'
 
 export const DEFAULT_FILTERS = {
   month: 'all',
@@ -111,14 +112,24 @@ export default function FilterBar({ filters, onChange, onReset, resultCount, act
       </div>
 
       {/* Rentang tanggal + info hasil */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <label className="flex items-center gap-2 text-[11px] font-medium text-brand-800/70">
           Dari
-          <input type="date" value={filters.from} onChange={(e) => set('from', e.target.value)} aria-label="Dari tanggal" className="input w-auto !py-1 !text-xs" />
+          <DatePicker compact value={filters.from} onChange={(v) => set('from', v)} placeholder="Pilih…" ariaLabel="Dari tanggal" />
+          {filters.from && (
+            <button type="button" className="icon-btn !h-6 !w-6" onClick={() => set('from', '')} aria-label="Hapus tanggal awal" title="Hapus">
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
         </label>
         <label className="flex items-center gap-2 text-[11px] font-medium text-brand-800/70">
           Sampai
-          <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} aria-label="Sampai tanggal" className="input w-auto !py-1 !text-xs" />
+          <DatePicker compact value={filters.to} onChange={(v) => set('to', v)} placeholder="Pilih…" ariaLabel="Sampai tanggal" />
+          {filters.to && (
+            <button type="button" className="icon-btn !h-6 !w-6" onClick={() => set('to', '')} aria-label="Hapus tanggal akhir" title="Hapus">
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
         </label>
         <span className="ml-auto text-[11px] font-medium text-brand-900/60">
           <span className="font-bold text-indonesia">{resultCount}</span> data · {activeLabel}
