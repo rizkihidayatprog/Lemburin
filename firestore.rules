@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Firestore Security Rules — Overtime Management (tanpa login)
+// ============================================================
+// PENTING: Aplikasi ini TIDAK memakai autentikasi. Siapa pun yang tahu
+// URL Firestore (projectId) berpotensi mengakses collection `overtime`.
+// Rules di bawah hanya memvalidasi BENTUK data. Untuk membatasi akses
+// secara nyata, aktifkan Firebase App Check (reCAPTCHA v3) di console,
+// lalu ubah rules menjadi: allow read, write: if request.appCheckOnly...
+// atau tambahkan autentikasi (mis. anonymous sign-in) bila diperlukan.
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /overtime/{docId} {
+      // Validasi skema saat create & update
+      function isValidOvertime() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['date', 'startTime', 'durationMinutes', 'endTime', 'description', 'overtimeType', 'fee', 'dayType', 'isOvernight'])
+          && d.date is string
+          && d.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+          && d.startTime is string
+          && d.startTime.matches('^\\d{2}:\\d{2}$')
+          && d.durationMinutes is number
+          && d.durationMinutes > 0
+          && d.durationMinutes <= 1440
+          && d.endTime is string
+          && d.description is string
+          && d.description.size() > 0
+          && d.description.size() <= 200
+          && d.overtimeType in ['pagi', 'malam', 'pagi_malam', 'overnight', 'weekend_halfday', 'weekend_fullday', 'weekend_overnight']
+          && d.fee is number
+          && d.fee >= 0
+          && d.dayType in ['weekday', 'weekend']
+          && d.isOvernight is bool
+          // Field ACC bersifat opsional (rekap & approval atasan)
+          && (!('acc' in d) || d.acc is bool)
+          && (!('accAt' in d) || d.accAt is string)
+          && (!('batchId' in d) || d.batchId is string)
+          && (!('batchLabel' in d) || d.batchLabel is string)
+          && (!('batchStart' in d) || d.batchStart is string)
+          && (!('batchEnd' in d) || d.batchEnd is string);
+      }
+
+      allow read: if true;
+      allow create, update: if isValidOvertime();
+      allow delete: if true;
+    }
+
+    // Collection lain ditolak secara default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

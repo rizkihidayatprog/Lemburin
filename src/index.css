@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-[#fffdf8] text-brand-950 font-sans antialiased;
+  }
+  ::selection {
+    background: rgba(250, 204, 21, 0.5);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-brand-600/15 bg-white;
+  }
+  .label {
+    @apply mb-1 block text-[11px] font-semibold uppercase tracking-wide text-brand-800/80;
+  }
+  .input {
+    @apply w-full rounded-lg border border-brand-600/25 bg-white px-3 py-2 text-sm text-brand-950
+           placeholder-brand-800/40 outline-none transition
+           focus:border-gold-500
+           disabled:cursor-not-allowed disabled:bg-brand-50 disabled:opacity-70;
+  }
+  .input-error {
+    @apply border-brand-600;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indonesia px-4 py-2.5 text-sm font-semibold text-white
+           transition hover:bg-brand-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gold-600/50 bg-gold-400 px-4 py-2.5 text-sm font-bold text-brand-950
+           transition hover:bg-gold-300 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-brand-600/25 bg-white px-4 py-2.5 text-sm font-medium text-brand-800
+           transition hover:bg-brand-50 disabled:opacity-50;
+  }
+  .icon-btn {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-md border border-brand-600/20 text-brand-700
+           transition hover:bg-brand-50;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-brand-900
+           transition hover:bg-brand-50;
+  }
+  .stat-card {
+    @apply card p-4;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-md border border-brand-600/20 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-800;
+  }
+}
+
+/* Scrollbar tipis & netral */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(160, 26, 18, 0.3); border-radius: 999px; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-toast-in { animation: toast-in 0.2s ease-out; }
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-modal-in { animation: modal-in 0.18s ease-out; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.15s ease-out; }
